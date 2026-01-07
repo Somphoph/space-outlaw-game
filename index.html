@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Outlaw - Alien Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- HUD Overlay -->
+        <div id="hud">
+            <div id="xp-bar-container">
+                <div id="xp-bar-fill"></div>
+            </div>
+            <div class="hud-content">
+                <div class="hud-left">
+                    <div id="level-text">LVL 1</div>
+                    <div id="health-bar-container">
+                        <div id="health-bar-fill"></div>
+                        <div id="health-text">100 / 100</div>
+                    </div>
+                </div>
+                <div class="hud-right">
+                    <div id="score-text">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upgrade Menu Overlay -->
+        <div id="upgrade-menu" class="hidden">
+            <div class="menu-content">
+                <h1>LEVEL UP!</h1>
+                <p>Choose an upgrade to enhance your ship</p>
+                <div id="upgrade-options">
+                    <!-- Dynamic buttons will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Overlay -->
+        <div id="game-over" class="hidden">
+            <div class="menu-content">
+                <h1>SQUAD ALPHA DOWN</h1>
+                <p id="final-score">Score: 0</p>
+                <button id="restart-btn" onclick="location.reload()">REPLOY MISSION</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

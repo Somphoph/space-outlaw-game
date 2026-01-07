@@ -1,0 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Space+Grotesk:wght@300;700&display=swap');
+
+:root {
+    --primary-neon: #00f3ff;
+    --secondary-neon: #bc13fe;
+    --bg-dark: #050505;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    user-select: none;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+canvas {
+    display: block;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #050505 100%);
+}
+
+/* HUD Styles */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#xp-bar-container {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    position: relative;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+#xp-bar-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--primary-neon);
+    box-shadow: 0 0 10px var(--primary-neon);
+    transition: width 0.3s ease;
+}
+
+.hud-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px 25px;
+}
+
+.hud-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#level-text {
+    font-weight: 700;
+    color: var(--primary-neon);
+    font-size: 1rem;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 1px;
+}
+
+#health-bar-container {
+    width: 200px;
+    height: 18px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+}
+
+#health-bar-fill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff0055, #ff4d00);
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+    transition: width 0.2s ease;
+}
+
+#health-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+}
+
+#score-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    letter-spacing: -1px;
+}
+
+/* Overlays */
+.hidden {
+    display: none !important;
+}
+
+#upgrade-menu,
+#game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+}
+
+.menu-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    background: linear-gradient(to right, var(--primary-neon), var(--secondary-neon));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+    font-family: 'Space+Grotesk', sans-serif;
+}
+
+p {
+    color: #888;
+    margin-bottom: 30px;
+}
+
+#upgrade-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+.upgrade-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 24px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.upgrade-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-neon);
+    opacity: 0.5;
+}
+
+.upgrade-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-neon);
+    transform: translateX(10px);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+}
+
+.upgrade-btn:hover .arrow {
+    transform: translateX(5px);
+    color: var(--primary-neon);
+}
+
+.upgrade-btn .name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.upgrade-btn .desc {
+    font-size: 0.95rem;
+    color: #999;
+}
+
+.upgrade-btn .arrow {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Tier Specific Styles */
+.upgrade-btn[data-tier="2"]::before {
+    background: var(--secondary-neon);
+}
+
+.upgrade-btn[data-tier="2"]:hover {
+    border-color: var(--secondary-neon);
+    box-shadow: 0 0 30px rgba(188, 19, 254, 0.2);
+}
+
+.upgrade-btn[data-tier="3"]::before {
+    background: #ffdf00;
+}
+
+.upgrade-btn[data-tier="3"]:hover {
+    border-color: #ffdf00;
+    box-shadow: 0 0 30px rgba(255, 223, 0, 0.2);
+}
+
+#restart-btn {
+    background: var(--primary-neon);
+    color: black;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 30px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s;
+}
+
+#restart-btn:hover {
+    transform: scale(1.05);
+    background: #00d8e4;
+}
