@@ -47,8 +47,8 @@ const CONFIG = {
         DASH_SPEED: 14
     },
     ENEMY: {
-        SPAWN_RATE_START: 1600,
-        SPAWN_RATE_MIN: 280
+        SPAWN_RATE_START: 2200,
+        SPAWN_RATE_MIN: 340
     },
     COLORS: {
         PLAYER_BLUE: '#00f3ff',
@@ -61,11 +61,11 @@ const CONFIG = {
 };
 
 const ENEMY_TYPES = {
-    grunt: { radius: 15, speed: 2.05, hp: 22, xp: 18, score: 100, color: '#bc13fe', damage: 10 },
-    scout: { radius: 11, speed: 3.35, hp: 12, xp: 14, score: 80, color: '#3dffc2', damage: 8 },
-    brute: { radius: 24, speed: 1.15, hp: 90, xp: 40, score: 220, color: '#ff3355', damage: 18 },
-    spitter: { radius: 16, speed: 1.45, hp: 34, xp: 28, score: 150, color: '#ff9d00', damage: 10, shoot: true },
-    elite: { radius: 32, speed: 1.7, hp: 260, xp: 120, score: 800, color: '#ffdf00', damage: 24 }
+    grunt: { radius: 17, speed: 1.72, hp: 20, xp: 24, score: 100, color: '#d24dff', damage: 8 },
+    scout: { radius: 13, speed: 2.85, hp: 12, xp: 18, score: 80, color: '#3dffc2', damage: 7 },
+    brute: { radius: 26, speed: 1.05, hp: 90, xp: 48, score: 220, color: '#ff3355', damage: 14 },
+    spitter: { radius: 18, speed: 1.28, hp: 34, xp: 32, score: 150, color: '#ff9d00', damage: 9, shoot: true },
+    elite: { radius: 34, speed: 1.55, hp: 260, xp: 140, score: 800, color: '#ffdf00', damage: 18 }
 };
 
 const GAME = {
@@ -664,7 +664,16 @@ class Enemy {
         ctx.closePath();
         ctx.fillStyle = this.hitFlash > 0 ? '#ffffff' : this.color;
         ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2);
+        ctx.strokeStyle = this.color + '55';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
         if (this.hp < this.maxHp && (this.type === 'brute' || this.type === 'elite' || this.hp / this.maxHp < 0.5)) {
             const w = this.radius * 2;
@@ -857,10 +866,15 @@ class Player {
         }
         this.hp -= amount;
         this.flash = 8;
-        this.invulnerable = 320;
-        shake(10);
+        this.invulnerable = 700;
+        shake(8);
         AudioFX.hit();
-        if (source) source.passThroughTimer = 50;
+        if (source) {
+            const ang = Math.atan2(source.y - this.y, source.x - this.x);
+            source.x += Math.cos(ang) * 55;
+            source.y += Math.sin(ang) * 55;
+            source.passThroughTimer = 75;
+        }
         if (this.hp <= 0) {
             this.hp = 0;
             endGame();
@@ -929,6 +943,9 @@ class Player {
         ctx.closePath();
         ctx.fillStyle = shipColor;
         ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
         ctx.beginPath();
         ctx.arc(4, 0, 4, 0, Math.PI * 2);
         ctx.fillStyle = '#041018';
@@ -994,8 +1011,8 @@ function damageEnemy(enemy, amount, isCrit) {
     spawnFloater(enemy.x, enemy.y - enemy.radius, String(Math.round(amount)), isCrit ? CONFIG.COLORS.CRIT : '#ffffff');
     if (enemy.hp > 0) return false;
     GAME.kills += 1;
-    bumpCombo();
     const gained = addScore(enemy.scoreValue);
+    bumpCombo();
     spawnFloater(enemy.x, enemy.y, `+${gained}`, CONFIG.COLORS.PLAYER_GOLD);
     GAME.entities.xpOrbs.push(new XPOrb(enemy.x, enemy.y, enemy.xpValue));
     maybeDropPowerup(enemy.x, enemy.y);
@@ -1016,6 +1033,23 @@ function grantXp(value) {
     }
     if (GAME.pendingLevelUps > 0 && GAME.mode === 'playing') {
         UIManager.showUpgradeMenu();
+    }
+}
+
+function drawOffscreenMarkers() {
+    const pad = 18;
+    for (const e of GAME.entities.enemies) {
+        const onScreen = e.x >= -10 && e.x <= canvas.width + 10 && e.y >= -10 && e.y <= canvas.height + 10;
+        if (onScreen) continue;
+        const x = clamp(e.x, pad, canvas.width - pad);
+        const y = clamp(e.y, pad, canvas.height - pad);
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
     }
 }
 
@@ -1067,6 +1101,7 @@ const EntityManager = {
         enemies.forEach((e) => e.draw());
         player.draw();
         floaters.forEach((f) => f.draw());
+        drawOffscreenMarkers();
     },
     checkCollisions() {
         const { projectiles, enemies, xpOrbs, enemyShots, powerups } = GAME.entities;
@@ -1138,8 +1173,9 @@ function beginWave(wave) {
     GAME.wave = wave;
     GAME.waveTimer = 0;
     GAME.restTimer = 0;
-    GAME.spawnRate = Math.max(CONFIG.ENEMY.SPAWN_RATE_MIN, CONFIG.ENEMY.SPAWN_RATE_START * Math.pow(0.92, wave - 1));
-    GAME.waveLength = 18000 + wave * 1600;
+    GAME.spawnRate = Math.max(CONFIG.ENEMY.SPAWN_RATE_MIN, CONFIG.ENEMY.SPAWN_RATE_START * Math.pow(0.93, wave - 1));
+    GAME.waveLength = 16000 + wave * 1800;
+    GAME.spawnTimer = wave === 1 ? -1800 : -800;
     const elite = wave % 5 === 0;
     showWaveBanner(`WAVE ${wave}`, elite ? 'Elite signature detected' : 'Hold the sector');
     AudioFX.wave();
@@ -1238,11 +1274,11 @@ function resetRun() {
     GAME.score = 0;
     GAME.level = 1;
     GAME.xp = 0;
-    GAME.xpToNextLevel = 100;
+    GAME.xpToNextLevel = 72;
     GAME.kills = 0;
     GAME.wave = 1;
     GAME.elapsed = 0;
-    GAME.spawnTimer = 0;
+    GAME.spawnTimer = -2200;
     GAME.spawnRate = CONFIG.ENEMY.SPAWN_RATE_START;
     GAME.combo = 1;
     GAME.comboTimer = 0;
@@ -1251,6 +1287,7 @@ function resetRun() {
     camera.trauma = 0;
     clearEntities();
     player.reset();
+    player.invulnerable = 2800;
 }
 
 function startGame() {
@@ -1352,9 +1389,9 @@ function gameLoop(now) {
             GAME.comboTimer -= raw;
             if (GAME.comboTimer <= 0) GAME.combo = 1;
         }
-        if (camera.trauma > 0) camera.trauma = Math.max(0, camera.trauma - 0.65 * dt);
-        camera.x = (Math.random() - 0.5) * camera.trauma;
-        camera.y = (Math.random() - 0.5) * camera.trauma;
+        if (camera.trauma > 0) camera.trauma = Math.max(0, camera.trauma - 0.85 * dt);
+        camera.x = (Math.random() - 0.5) * camera.trauma * 0.6;
+        camera.y = (Math.random() - 0.5) * camera.trauma * 0.6;
         ctx.save();
         ctx.translate(camera.x, camera.y);
         updateWaves(dt);
