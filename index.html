@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Outlaw - Alien Shooter</title>
+    <meta name="theme-color" content="#050505">
+    <title>Space Outlaw - Alien Survival</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        
-        <!-- HUD Overlay -->
-        <div id="hud">
+
+        <div id="hud" class="hidden">
             <div id="xp-bar-container">
                 <div id="xp-bar-fill"></div>
             </div>
@@ -22,30 +22,73 @@
                         <div id="health-bar-fill"></div>
                         <div id="health-text">100 / 100</div>
                     </div>
+                    <div id="dash-bar-container" title="Dash cooldown">
+                        <div id="dash-bar-fill"></div>
+                        <div id="dash-text">DASH</div>
+                    </div>
+                </div>
+                <div class="hud-center">
+                    <div id="wave-text">WAVE 1</div>
+                    <div id="combo-text" class="hidden">COMBO x2</div>
                 </div>
                 <div class="hud-right">
                     <div id="score-text">0</div>
+                    <div id="stats-row">
+                        <span id="kills-text">0 KILLS</span>
+                        <span id="time-text">00:00</span>
+                    </div>
+                    <div id="hiscore-text">BEST 0</div>
                 </div>
             </div>
         </div>
 
-        <!-- Upgrade Menu Overlay -->
+        <div id="wave-banner" class="hidden">
+            <div class="banner-kicker">INCOMING</div>
+            <div class="banner-title" id="wave-banner-title">WAVE 1</div>
+            <div class="banner-sub" id="wave-banner-sub">Hold the sector</div>
+        </div>
+
+        <div id="start-screen">
+            <div class="menu-content start-content">
+                <p class="kicker">SECTOR 9 // DEEP SPACE</p>
+                <h1>SPACE OUTLAW</h1>
+                <p class="tagline">Survive the swarm. Upgrade the ship. Don't blink.</p>
+                <button id="start-btn" type="button">ENGAGE</button>
+                <div id="menu-hiscore">BEST SCORE 0</div>
+                <div class="controls-grid">
+                    <div><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> Move</div>
+                    <div><kbd>MOUSE</kbd> Aim (auto-fire)</div>
+                    <div><kbd>SPACE</kbd> Dash</div>
+                    <div><kbd>ESC</kbd> Pause</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pause-menu" class="hidden">
+            <div class="menu-content">
+                <h1>PAUSED</h1>
+                <p>The swarm is still out there.</p>
+                <div class="menu-actions">
+                    <button id="resume-btn" type="button">RESUME</button>
+                    <button id="pause-restart-btn" class="ghost-btn" type="button">ABORT MISSION</button>
+                </div>
+            </div>
+        </div>
+
         <div id="upgrade-menu" class="hidden">
             <div class="menu-content">
                 <h1>LEVEL UP!</h1>
                 <p>Choose an upgrade to enhance your ship</p>
-                <div id="upgrade-options">
-                    <!-- Dynamic buttons will be inserted here -->
-                </div>
+                <div id="upgrade-options"></div>
             </div>
         </div>
 
-        <!-- Game Over Overlay -->
         <div id="game-over" class="hidden">
             <div class="menu-content">
                 <h1>SQUAD ALPHA DOWN</h1>
                 <p id="final-score">Score: 0</p>
-                <button id="restart-btn" onclick="location.reload()">REPLOY MISSION</button>
+                <div id="final-stats"></div>
+                <button id="restart-btn" type="button">REDEPLOY MISSION</button>
             </div>
         </div>
     </div>
