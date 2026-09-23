@@ -166,27 +166,26 @@ function clamp(v, min, max) {
 const Gfx = {
     time: 0,
     rgba(hex, a) {
-        const h = hex.replace('#', '');
-        const n = h.length === 3
-            ? h.split('').map((c) => c + c).join('')
-            : h;
+        const n = hex.replace('#', '');
         const r = parseInt(n.slice(0, 2), 16);
         const g = parseInt(n.slice(2, 4), 16);
         const b = parseInt(n.slice(4, 6), 16);
         return `rgba(${r},${g},${b},${a})`;
     },
     glow(x, y, radius, color, alpha = 0.5) {
+        ctx.save();
         const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
         g.addColorStop(0, color);
         g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.globalAlpha = alpha;
+        ctx.globalAlpha *= alpha;
         ctx.fillStyle = g;
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
+        ctx.restore();
     },
     poly(points, fill, stroke, width = 1.6) {
+        ctx.save();
         ctx.beginPath();
         ctx.moveTo(points[0][0], points[0][1]);
         for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
@@ -201,6 +200,7 @@ const Gfx = {
             ctx.lineJoin = 'round';
             ctx.stroke();
         }
+        ctx.restore();
     },
     engineFlame(length, width, inner, outer) {
         const flick = length * (0.78 + Math.sin(this.time * 0.7) * 0.08 + Math.random() * 0.14);
@@ -227,11 +227,12 @@ function formatTime(ms) {
 function addScore(base) {
     const gained = Math.round(base * GAME.combo);
     GAME.score += gained;
-    if (GAME.score > GAME.highScore) {
-        GAME.highScore = GAME.score;
-        localStorage.setItem(HISCORE_KEY, String(GAME.highScore));
-    }
+    if (GAME.score > GAME.highScore) GAME.highScore = GAME.score;
     return gained;
+}
+
+function persistHighScore() {
+    localStorage.setItem(HISCORE_KEY, String(GAME.highScore));
 }
 
 function bumpCombo() {
@@ -365,11 +366,10 @@ class Star {
     }
     update(dt) {
         this.y += this.speed * dt;
-        this.phase += 0.03 * dt;
         if (this.y > canvas.height) this.reset(false);
     }
     draw() {
-        const twinkle = 0.55 + Math.sin(this.phase + Gfx.time * 0.04) * 0.45;
+        const twinkle = 0.55 + Math.sin(this.phase + Gfx.time * 0.07) * 0.45;
         ctx.globalAlpha = this.alpha * twinkle;
         ctx.fillStyle = this.tint;
         ctx.beginPath();
@@ -395,7 +395,6 @@ class Particle {
         this.y = y;
         this.color = color;
         this.kind = kind;
-        this.angle = Math.random() * Math.PI * 2;
         if (kind === 'ring') {
             this.size = 6;
             this.grow = 2.4 + Math.random();
@@ -411,9 +410,10 @@ class Particle {
             this.decay = 0.05 + Math.random() * 0.02;
         } else {
             this.size = Math.random() * 3.2 + 1.1;
+            const angle = Math.random() * Math.PI * 2;
             const mag = 2 + Math.random() * 5;
-            this.speedX = Math.cos(this.angle) * mag;
-            this.speedY = Math.sin(this.angle) * mag;
+            this.speedX = Math.cos(angle) * mag;
+            this.speedY = Math.sin(angle) * mag;
             this.life = 1;
             this.decay = Math.random() * 0.04 + 0.018;
         }
@@ -470,11 +470,11 @@ class Floater {
     draw() {
         ctx.save();
         ctx.globalAlpha = Math.max(0, this.life);
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 8;
         ctx.font = '700 14px "Space Grotesk", sans-serif';
         ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillText(this.text, this.x + 1, this.y + 1);
+        ctx.fillStyle = this.color;
         ctx.fillText(this.text, this.x, this.y);
         ctx.restore();
     }
@@ -967,8 +967,7 @@ class Player {
                 GAME.entities.particles.push(new Particle(
                     this.x - Math.cos(this.angle) * 16,
                     this.y - Math.sin(this.angle) * 16,
-                    dashing ? '#ffffff' : CONFIG.COLORS.PLAYER_BLUE,
-                    dashing ? 'spark' : 'spark'
+                    dashing ? '#ffffff' : CONFIG.COLORS.PLAYER_BLUE
                 ));
             }
         }
@@ -1130,7 +1129,7 @@ class Player {
             ctx.rotate(Gfx.time * 0.04);
             ctx.beginPath();
             ctx.arc(0, 0, rad, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(0, 243, 255, 0.75)';
+            ctx.strokeStyle = Gfx.rgba(CONFIG.COLORS.PLAYER_BLUE, 0.75);
             ctx.lineWidth = 2.4;
             ctx.setLineDash([8, 7]);
             ctx.stroke();
@@ -1140,14 +1139,14 @@ class Player {
             ctx.strokeStyle = 'rgba(124, 255, 251, 0.28)';
             ctx.lineWidth = 1;
             ctx.stroke();
-            ctx.fillStyle = 'rgba(0, 243, 255, 0.07)';
+            ctx.fillStyle = Gfx.rgba(CONFIG.COLORS.PLAYER_BLUE, 0.07);
             ctx.fill();
             ctx.restore();
         }
         if (this.overdrivePassive && this.hp < this.maxHp * 0.3) {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius + 20, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 223, 0, 0.4)';
+            ctx.strokeStyle = Gfx.rgba(CONFIG.COLORS.PLAYER_GOLD, 0.4);
             ctx.lineWidth = 2;
             ctx.stroke();
         }
@@ -1227,16 +1226,12 @@ function drawOffscreenMarkers() {
         if (onScreen) continue;
         const x = clamp(e.x, pad, canvas.width - pad);
         const y = clamp(e.y, pad, canvas.height - pad);
-        ctx.beginPath();
-        ctx.moveTo(x, y - 7);
-        ctx.lineTo(x + 6, y + 4);
-        ctx.lineTo(x - 6, y + 4);
-        ctx.closePath();
-        ctx.fillStyle = e.color;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
+        Gfx.poly(
+            [[x, y - 7], [x + 6, y + 4], [x - 6, y + 4]],
+            e.color,
+            'rgba(255,255,255,0.85)',
+            1.4
+        );
     }
 }
 
@@ -1499,11 +1494,13 @@ function returnToMenu() {
     upgradeMenu.classList.add('hidden');
     waveBanner.classList.add('hidden');
     startScreen.classList.remove('hidden');
+    persistHighScore();
     UIManager.update();
 }
 
 function togglePause() {
     if (GAME.mode === 'playing') {
+        persistHighScore();
         GAME.mode = 'paused';
         pauseMenu.classList.remove('hidden');
     } else if (GAME.mode === 'paused') {
@@ -1513,6 +1510,7 @@ function togglePause() {
 }
 
 function endGame() {
+    persistHighScore();
     GAME.mode = 'gameover';
     upgradeMenu.classList.add('hidden');
     pauseMenu.classList.add('hidden');
@@ -1554,19 +1552,10 @@ function drawBackdrop() {
     ctx.fillStyle = '#04040c';
     ctx.fillRect(0, 0, w, h);
 
-    const nebula = (nx, ny, radius, color) => {
-        const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, radius);
-        g.addColorStop(0, color);
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(nx, ny, radius, 0, Math.PI * 2);
-        ctx.fill();
-    };
     const drift = Math.sin(Gfx.time * 0.004);
-    nebula(w * 0.2, h * 0.28 + drift * 8, 460, 'rgba(92, 24, 150, 0.22)');
-    nebula(w * 0.78, h * 0.18 - drift * 6, 380, 'rgba(12, 110, 170, 0.16)');
-    nebula(w * 0.58, h * 0.82, 520, 'rgba(140, 18, 70, 0.12)');
+    Gfx.glow(w * 0.2, h * 0.28 + drift * 8, 460, 'rgba(92, 24, 150, 0.22)', 1);
+    Gfx.glow(w * 0.78, h * 0.18 - drift * 6, 380, 'rgba(12, 110, 170, 0.16)', 1);
+    Gfx.glow(w * 0.58, h * 0.82, 520, 'rgba(140, 18, 70, 0.12)', 1);
 
     const px = w * 0.84;
     const py = h * 0.16;
@@ -1595,12 +1584,6 @@ function drawBackdrop() {
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
-
-    const vg = ctx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.25, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
-    vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, 'rgba(0,0,0,0.38)');
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, w, h);
 }
 
 let lastTime = performance.now();
@@ -1639,7 +1622,6 @@ function gameLoop(now) {
             player.x = canvas.width / 2;
             player.y = canvas.height * 0.84;
             player.angle += 0.012 * dt;
-            player.moveX = 1;
             player.draw();
         } else {
             EntityManager.draw();
@@ -1654,6 +1636,9 @@ document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('resume-btn').addEventListener('click', togglePause);
 document.getElementById('pause-restart-btn').addEventListener('click', returnToMenu);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) persistHighScore();
+});
 
 UIManager.update();
 requestAnimationFrame(gameLoop);
