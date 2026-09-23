@@ -801,9 +801,10 @@ class Enemy {
         this.y += Math.sin(this.angle) * this.speed * dt;
     }
     draw() {
-        const hull = this.hitFlash > 0 ? '#ffffff' : '#1a1224';
-        const accent = this.hitFlash > 0 ? '#ffffff' : this.color;
-        Gfx.glow(this.x, this.y, this.radius * 2.4, accent, 0.32);
+        const hull = this.hitFlash > 0 ? '#ffffff' : this.color;
+        const accent = this.hitFlash > 0 ? '#ffffff' : '#fff6ff';
+        const shade = this.hitFlash > 0 ? '#ffffff' : 'rgba(8, 4, 16, 0.55)';
+        Gfx.glow(this.x, this.y, this.radius * 3.1, this.color, 0.42);
 
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -815,17 +816,17 @@ class Enemy {
             Gfx.poly([[r + 6, 0], [8, r], [-r, r * 0.72], [-r * 0.45, 0], [-r, -r * 0.72], [8, -r]], hull, accent, 2);
             Gfx.poly([[4, r * 0.55], [-r * 0.2, r * 0.78], [-r * 0.55, r * 0.4]], accent, null);
             Gfx.poly([[4, -r * 0.55], [-r * 0.2, -r * 0.78], [-r * 0.55, -r * 0.4]], accent, null);
-            Gfx.poly([[10, 0], [0, 6], [-8, 0], [0, -6]], accent, '#ffd6de', 1.2);
+            Gfx.poly([[10, 0], [0, 6], [-8, 0], [0, -6]], shade, '#ffd6de', 1.2);
         } else if (this.type === 'scout') {
             Gfx.engineFlame(r * 1.3, r * 0.22, '#d6fff4', accent);
             Gfx.poly([[r + 8, 0], [-r * 0.2, r * 0.55], [-r, r * 0.28], [-r * 0.35, 0], [-r, -r * 0.28], [-r * 0.2, -r * 0.55]], hull, accent, 1.6);
-            Gfx.poly([[6, 0], [-2, 3.5], [-8, 0], [-2, -3.5]], accent, '#ffffff', 1);
+            Gfx.poly([[6, 0], [-2, 3.5], [-8, 0], [-2, -3.5]], shade, '#ffffff', 1);
         } else if (this.type === 'elite') {
             Gfx.engineFlame(r * 1.1, r * 0.32, '#fff4c2', accent);
             Gfx.poly([[r + 8, 0], [12, r * 0.95], [-r * 0.2, r * 0.7], [-r, r * 0.35], [-r * 0.3, 0], [-r, -r * 0.35], [-r * 0.2, -r * 0.7], [12, -r * 0.95]], hull, accent, 2);
             Gfx.poly([[r * 0.15, r * 0.55], [-r * 0.1, r * 1.15], [-r * 0.55, r * 0.4]], accent, null);
             Gfx.poly([[r * 0.15, -r * 0.55], [-r * 0.1, -r * 1.15], [-r * 0.55, -r * 0.4]], accent, null);
-            Gfx.poly([[14, 0], [2, 7], [-10, 0], [2, -7]], accent, '#fff6c8', 1.4);
+            Gfx.poly([[14, 0], [2, 7], [-10, 0], [2, -7]], shade, '#fff6c8', 1.4);
         } else if (this.type === 'spitter') {
             Gfx.engineFlame(r * 0.8, r * 0.24, '#ffe0a8', accent);
             Gfx.poly([[r + 4, 0], [6, r * 0.85], [-r * 0.85, r * 0.55], [-r, 0], [-r * 0.85, -r * 0.55], [6, -r * 0.85]], hull, accent, 1.8);
@@ -840,7 +841,7 @@ class Enemy {
         } else {
             Gfx.engineFlame(r * 1.05, r * 0.22, '#f0c8ff', accent);
             Gfx.poly([[r + 4, 0], [6, r * 0.78], [-r, r * 0.48], [-r * 0.4, 0], [-r, -r * 0.48], [6, -r * 0.78]], hull, accent, 1.7);
-            Gfx.poly([[8, 0], [-2, 4.5], [-8, 0], [-2, -4.5]], accent, '#f4e9ff', 1.1);
+            Gfx.poly([[8, 0], [-2, 4.5], [-8, 0], [-2, -4.5]], shade, '#f4e9ff', 1.1);
         }
         ctx.restore();
 
@@ -1636,8 +1637,9 @@ function gameLoop(now) {
         camera.y = 0;
         if (GAME.mode === 'menu') {
             player.x = canvas.width / 2;
-            player.y = canvas.height * 0.62;
-            player.angle += 0.008 * dt;
+            player.y = canvas.height * 0.84;
+            player.angle += 0.012 * dt;
+            player.moveX = 1;
             player.draw();
         } else {
             EntityManager.draw();
