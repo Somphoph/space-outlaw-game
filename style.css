@@ -39,7 +39,17 @@ body {
 
 canvas {
     display: block;
-    background: radial-gradient(circle at 50% 45%, #151528 0%, #05050c 62%, #020208 100%);
+    background: #04040c;
+}
+
+#vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 6;
+    background:
+        radial-gradient(circle at 50% 45%, transparent 42%, rgba(0, 0, 0, 0.42) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.28));
 }
 
 #hud {
@@ -81,6 +91,10 @@ canvas {
     flex-direction: column;
     gap: 8px;
     min-width: 180px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(8, 12, 22, 0.35), rgba(8, 12, 22, 0.12));
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .hud-right {
@@ -235,20 +249,24 @@ canvas {
 
 #start-screen {
     background:
-        radial-gradient(circle at 50% 20%, rgba(0, 243, 255, 0.12), transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(188, 19, 254, 0.14), transparent 35%),
-        rgba(0, 0, 0, 0.55);
+        radial-gradient(circle at 50% 18%, rgba(0, 243, 255, 0.06), transparent 42%),
+        radial-gradient(circle at 82% 78%, rgba(188, 19, 254, 0.08), transparent 38%),
+        rgba(2, 4, 12, 0.08);
 }
 
 .menu-content {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    background: linear-gradient(180deg, rgba(12, 18, 32, 0.82), rgba(6, 8, 16, 0.78));
+    border: 1px solid rgba(0, 243, 255, 0.22);
     padding: 40px;
     border-radius: 24px;
     text-align: center;
     max-width: 640px;
     width: 90%;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.65),
+        0 0 40px rgba(0, 243, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
 }
 
 .start-content {
