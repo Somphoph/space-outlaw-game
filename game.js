@@ -352,11 +352,11 @@ const SKILLS = [
 class Star {
     constructor(layer = 1) {
         this.layer = layer;
-        this.reset(true);
+        this.reset();
     }
-    reset(anywhere = false) {
+    reset() {
         this.x = Math.random() * canvas.width;
-        this.y = anywhere ? Math.random() * canvas.height : -2;
+        this.y = Math.random() * canvas.height;
         this.size = this.layer * 0.55 + Math.random() * 1.1;
         this.speed = this.layer * 0.32 + Math.random() * 0.28;
         this.alpha = 0.22 + this.layer * 0.2;
@@ -365,8 +365,16 @@ class Star {
         this.tint = Math.random() > 0.75 ? (Math.random() > 0.5 ? '#b8dcff' : '#ffe6c2') : '#ffffff';
     }
     update(dt) {
-        this.y += this.speed * dt;
-        if (this.y > canvas.height) this.reset(false);
+        const depth = 0.35 + this.layer * 0.55;
+        this.x -= flight.vx * depth * dt;
+        this.y += this.speed * dt - flight.vy * depth * dt;
+        const w = canvas.width;
+        const h = canvas.height;
+        if (w <= 0 || h <= 0) return;
+        if (this.x < 0) this.x += w;
+        else if (this.x > w) this.x -= w;
+        if (this.y < 0) this.y += h;
+        else if (this.y > h) this.y -= h;
     }
     draw() {
         const twinkle = 0.55 + Math.sin(this.phase + Gfx.time * 0.07) * 0.45;
@@ -1235,8 +1243,22 @@ function drawOffscreenMarkers() {
     }
 }
 
+function scrollWorld(dt) {
+    const dx = -flight.vx * dt;
+    const dy = -flight.vy * dt;
+    if (dx === 0 && dy === 0) return;
+    const { enemies, projectiles, enemyShots, particles, xpOrbs, blackHoles, powerups, floaters } = GAME.entities;
+    for (const group of [enemies, projectiles, enemyShots, particles, xpOrbs, blackHoles, powerups, floaters]) {
+        for (const item of group) {
+            item.x += dx;
+            item.y += dy;
+        }
+    }
+}
+
 const EntityManager = {
     update(dt) {
+        scrollWorld(dt);
         const { projectiles, enemies, particles, blackHoles, xpOrbs, enemyShots, powerups, floaters } = GAME.entities;
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const p = projectiles[i];
@@ -1546,6 +1568,35 @@ function updateWaves(dt) {
     }
 }
 
+const flight = { x: 0, y: 0, vx: 0, vy: 0 };
+
+function loopShift(base, delta, span, margin) {
+    const period = span + margin * 2;
+    return ((base + delta + margin) % period + period) % period - margin;
+}
+
+function updateFlight(dt) {
+    if (GAME.mode === 'paused' || GAME.mode === 'upgrade' || GAME.mode === 'gameover') {
+        flight.vx = 0;
+        flight.vy = 0;
+        return;
+    }
+    let vx = 0;
+    let vy = 0;
+    if (GAME.mode === 'playing') {
+        const dashing = player.dashTimer > 0;
+        const speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
+        vx = player.moveX * speed;
+        vy = player.moveY * speed;
+    } else if (GAME.mode === 'menu') {
+        vy = -2.2;
+    }
+    flight.vx = vx;
+    flight.vy = vy;
+    flight.x -= vx * dt;
+    flight.y -= vy * dt;
+}
+
 function drawBackdrop() {
     const w = canvas.width;
     const h = canvas.height;
@@ -1553,12 +1604,18 @@ function drawBackdrop() {
     ctx.fillRect(0, 0, w, h);
 
     const drift = Math.sin(Gfx.time * 0.004);
-    Gfx.glow(w * 0.2, h * 0.28 + drift * 8, 460, 'rgba(92, 24, 150, 0.22)', 1);
-    Gfx.glow(w * 0.78, h * 0.18 - drift * 6, 380, 'rgba(12, 110, 170, 0.16)', 1);
-    Gfx.glow(w * 0.58, h * 0.82, 520, 'rgba(140, 18, 70, 0.12)', 1);
+    const far = 0.06;
+    const nebula = (bx, by, radius, color) => {
+        const x = loopShift(bx, flight.x * far, w, 520);
+        const y = loopShift(by, flight.y * far, h, 520);
+        Gfx.glow(x, y, radius, color, 1);
+    };
+    nebula(w * 0.2, h * 0.28 + drift * 8, 460, 'rgba(92, 24, 150, 0.22)');
+    nebula(w * 0.78, h * 0.18 - drift * 6, 380, 'rgba(12, 110, 170, 0.16)');
+    nebula(w * 0.58, h * 0.82, 520, 'rgba(140, 18, 70, 0.12)');
 
-    const px = w * 0.84;
-    const py = h * 0.16;
+    const px = loopShift(w * 0.84, flight.x * 0.14, w, 180);
+    const py = loopShift(h * 0.16, flight.y * 0.14, h, 180);
     const pr = Math.min(w, h) * 0.085;
     Gfx.glow(px, py, pr * 2.4, 'rgba(110, 170, 255, 0.35)', 0.55);
     const body = ctx.createRadialGradient(px - pr * 0.35, py - pr * 0.35, pr * 0.15, px, py, pr);
@@ -1592,6 +1649,7 @@ function gameLoop(now) {
     lastTime = now;
     const dt = Math.min(2.2, raw / 16.67);
     Gfx.time += dt;
+    updateFlight(dt);
 
     drawBackdrop();
     stars.forEach((s) => {
