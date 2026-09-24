@@ -1567,15 +1567,16 @@ function updateFlight(dt) {
         flight.vy = 0;
         return;
     }
-    let speed = 0;
+    let vx = 0;
+    let vy = 0;
     if (GAME.mode === 'playing') {
         const dashing = player.dashTimer > 0;
-        speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
+        const speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
+        vx = player.moveX * speed;
+        vy = player.moveY * speed;
     } else if (GAME.mode === 'menu') {
-        speed = 2.2;
+        vy = -2.2;
     }
-    const vx = Math.cos(player.angle) * speed;
-    const vy = Math.sin(player.angle) * speed;
     flight.vx = vx;
     flight.vy = vy;
     flight.x -= vx * dt;
