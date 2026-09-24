@@ -352,11 +352,11 @@ const SKILLS = [
 class Star {
     constructor(layer = 1) {
         this.layer = layer;
-        this.reset(true);
+        this.reset();
     }
-    reset(anywhere = false) {
+    reset() {
         this.x = Math.random() * canvas.width;
-        this.y = anywhere ? Math.random() * canvas.height : -2;
+        this.y = Math.random() * canvas.height;
         this.size = this.layer * 0.55 + Math.random() * 1.1;
         this.speed = this.layer * 0.32 + Math.random() * 0.28;
         this.alpha = 0.22 + this.layer * 0.2;
@@ -1567,17 +1567,15 @@ function updateFlight(dt) {
         flight.vy = 0;
         return;
     }
-    let vx = 0;
-    let vy = 0;
+    let speed = 0;
     if (GAME.mode === 'playing') {
         const dashing = player.dashTimer > 0;
-        const speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
-        vx = Math.cos(player.angle) * speed;
-        vy = Math.sin(player.angle) * speed;
+        speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
     } else if (GAME.mode === 'menu') {
-        vx = Math.cos(player.angle) * 2.2;
-        vy = Math.sin(player.angle) * 2.2;
+        speed = 2.2;
     }
+    const vx = Math.cos(player.angle) * speed;
+    const vy = Math.sin(player.angle) * speed;
     flight.vx = vx;
     flight.vy = vy;
     flight.x -= vx * dt;
