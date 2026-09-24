@@ -34,7 +34,7 @@ resize();
 
 const CONFIG = {
     PLAYER: {
-        BASE_SPEED: 5,
+        BASE_SPEED: 3.2,
         BASE_DAMAGE: 10,
         PROJECTILE_SPEED: 9,
         FIRE_RATE: 280,
@@ -44,7 +44,7 @@ const CONFIG = {
         SHIELD_RECHARGE: 26000,
         DASH_DURATION: 180,
         DASH_COOLDOWN: 1600,
-        DASH_SPEED: 14
+        DASH_SPEED: 8
     },
     ENEMY: {
         SPAWN_RATE_START: 2200,
@@ -365,7 +365,7 @@ class Star {
         this.tint = Math.random() > 0.75 ? (Math.random() > 0.5 ? '#b8dcff' : '#ffe6c2') : '#ffffff';
     }
     update(dt) {
-        const depth = 0.35 + this.layer * 0.55;
+        const depth = 0.4 + (this.layer - 1) * 0.3;
         this.x -= flight.vx * depth * dt;
         this.y += this.speed * dt - flight.vy * depth * dt;
         const w = canvas.width;
