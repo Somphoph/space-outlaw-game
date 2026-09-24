@@ -1243,8 +1243,22 @@ function drawOffscreenMarkers() {
     }
 }
 
+function scrollWorld(dt) {
+    const dx = -flight.vx * dt;
+    const dy = -flight.vy * dt;
+    if (dx === 0 && dy === 0) return;
+    const { enemies, projectiles, enemyShots, particles, xpOrbs, blackHoles, powerups, floaters } = GAME.entities;
+    for (const group of [enemies, projectiles, enemyShots, particles, xpOrbs, blackHoles, powerups, floaters]) {
+        for (const item of group) {
+            item.x += dx;
+            item.y += dy;
+        }
+    }
+}
+
 const EntityManager = {
     update(dt) {
+        scrollWorld(dt);
         const { projectiles, enemies, particles, blackHoles, xpOrbs, enemyShots, powerups, floaters } = GAME.entities;
         for (let i = projectiles.length - 1; i >= 0; i--) {
             const p = projectiles[i];
