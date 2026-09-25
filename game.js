@@ -34,7 +34,7 @@ resize();
 
 const CONFIG = {
     PLAYER: {
-        BASE_SPEED: 3.2,
+        BASE_SPEED: 1.6,
         BASE_DAMAGE: 10,
         PROJECTILE_SPEED: 9,
         FIRE_RATE: 280,
@@ -44,7 +44,7 @@ const CONFIG = {
         SHIELD_RECHARGE: 26000,
         DASH_DURATION: 180,
         DASH_COOLDOWN: 1600,
-        DASH_SPEED: 8
+        DASH_SPEED: 3.6
     },
     ENEMY: {
         SPAWN_RATE_START: 2200,
@@ -263,7 +263,7 @@ function createExplosion(x, y, color, count = 14) {
 const SKILLS = [
     { id: 'fireRate', name: 'Hyper-Reflex Trigger', desc: 'Increase attack speed by 20%', tier: 1, maxLevel: 5, effect: (p) => { p.fireRate *= 0.8; p.skillLevels.fireRate++; } },
     { id: 'damage', name: 'Singularity Cores', desc: 'Increase damage by 5', tier: 1, maxLevel: 5, effect: (p) => { p.damage += 5; p.skillLevels.damage++; } },
-    { id: 'speed', name: 'Ion Drive', desc: 'Increase movement speed by 10%', tier: 1, maxLevel: 5, effect: (p) => { p.speed *= 1.1; p.skillLevels.speed++; } },
+    { id: 'speed', name: 'Ion Drive', desc: 'Increase movement speed by 15%', tier: 1, maxLevel: 5, effect: (p) => { p.speed *= 1.15; p.skillLevels.speed++; } },
     { id: 'health', name: 'Nanotech Hull', desc: 'Max HP +20 and repair 30% of Max HP', tier: 1, maxLevel: 5, effect: (p) => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.3); p.skillLevels.health++; } },
     { id: 'multiShot', name: 'Split-Fire Module', desc: 'Add one extra projectile', tier: 1, maxLevel: 3, effect: (p) => { p.multiShot += 1; p.skillLevels.multiShot++; } },
     { id: 'magnet', name: 'Flux Magnet', desc: 'Increase collection range by 25%', tier: 1, maxLevel: 3, effect: (p) => { p.pickupRange *= 1.25; p.skillLevels.magnet++; } },
@@ -967,7 +967,7 @@ class Player {
         this.moveY = dy;
 
         const dashing = this.dashTimer > 0;
-        const speed = dashing ? CONFIG.PLAYER.DASH_SPEED * this.dashBoost : this.speed;
+        const speed = travelSpeed(this, dashing);
         if (dx !== 0 || dy !== 0) {
             this.x += dx * speed * dt;
             this.y += dy * speed * dt;
@@ -1575,6 +1575,11 @@ function loopShift(base, delta, span, margin) {
     return ((base + delta + margin) % period + period) % period - margin;
 }
 
+function travelSpeed(ship, dashing) {
+    if (!dashing) return ship.speed;
+    return CONFIG.PLAYER.DASH_SPEED * ship.dashBoost * (ship.speed / CONFIG.PLAYER.BASE_SPEED);
+}
+
 function updateFlight(dt) {
     if (GAME.mode === 'paused' || GAME.mode === 'upgrade' || GAME.mode === 'gameover') {
         flight.vx = 0;
@@ -1584,8 +1589,7 @@ function updateFlight(dt) {
     let vx = 0;
     let vy = 0;
     if (GAME.mode === 'playing') {
-        const dashing = player.dashTimer > 0;
-        const speed = dashing ? CONFIG.PLAYER.DASH_SPEED * player.dashBoost : player.speed;
+        const speed = travelSpeed(player, player.dashTimer > 0);
         vx = player.moveX * speed;
         vy = player.moveY * speed;
     } else if (GAME.mode === 'menu') {
