@@ -23,6 +23,10 @@ const startScreen = document.getElementById('start-screen');
 const pauseMenu = document.getElementById('pause-menu');
 const gameOverScreen = document.getElementById('game-over');
 const waveBanner = document.getElementById('wave-banner');
+const waveBannerTitle = document.getElementById('wave-banner-title');
+const waveBannerSub = document.getElementById('wave-banner-sub');
+const healthText = document.getElementById('health-text');
+const menuHiscore = document.getElementById('menu-hiscore');
 const HISCORE_KEY = 'space-outlaw-hiscore';
 
 function resize() {
@@ -33,6 +37,7 @@ window.addEventListener('resize', resize);
 resize();
 
 const CONFIG = {
+    XP_TO_FIRST_LEVEL: 72,
     PLAYER: {
         BASE_SPEED: 5,
         BASE_DAMAGE: 10,
@@ -74,7 +79,7 @@ const GAME = {
     highScore: Number(localStorage.getItem(HISCORE_KEY) || 0),
     level: 1,
     xp: 0,
-    xpToNextLevel: 100,
+    xpToNextLevel: CONFIG.XP_TO_FIRST_LEVEL,
     kills: 0,
     wave: 1,
     elapsed: 0,
@@ -245,18 +250,18 @@ function shake(amount) {
 }
 
 function spawnFloater(x, y, text, color) {
-    GAME.entities.floaters.push(new Floater(x, y, text, color));
+    GAME.entities.floaters.push(Floater.acquire(x, y, text, color));
 }
 
 function createExplosion(x, y, color, count = 14) {
     const max = 460;
     const room = max - GAME.entities.particles.length;
     if (room <= 0) return;
-    GAME.entities.particles.push(new Particle(x, y, color, 'ring'));
-    GAME.entities.particles.push(new Particle(x, y, color, 'glow'));
+    GAME.entities.particles.push(Particle.acquire(x, y, color, 'ring'));
+    GAME.entities.particles.push(Particle.acquire(x, y, color, 'glow'));
     const n = Math.min(count, Math.max(0, room - 2));
     for (let i = 0; i < n; i++) {
-        GAME.entities.particles.push(new Particle(x, y, color, 'spark'));
+        GAME.entities.particles.push(Particle.acquire(x, y, color, 'spark'));
     }
 }
 
@@ -398,7 +403,22 @@ class Star {
 }
 
 class Particle {
+    static pool = [];
+    static acquire(x, y, color, kind = 'spark') {
+        const p = Particle.pool.pop();
+        if (p) {
+            p.init(x, y, color, kind);
+            return p;
+        }
+        return new Particle(x, y, color, kind);
+    }
+    static release(p) {
+        if (Particle.pool.length < 600) Particle.pool.push(p);
+    }
     constructor(x, y, color, kind = 'spark') {
+        this.init(x, y, color, kind);
+    }
+    init(x, y, color, kind) {
         this.x = x;
         this.y = y;
         this.color = color;
@@ -463,7 +483,22 @@ class Particle {
 }
 
 class Floater {
+    static pool = [];
+    static acquire(x, y, text, color) {
+        const f = Floater.pool.pop();
+        if (f) {
+            f.init(x, y, text, color);
+            return f;
+        }
+        return new Floater(x, y, text, color);
+    }
+    static release(f) {
+        if (Floater.pool.length < 100) Floater.pool.push(f);
+    }
     constructor(x, y, text, color) {
+        this.init(x, y, text, color);
+    }
+    init(x, y, text, color) {
         this.x = x + rand(-8, 8);
         this.y = y;
         this.text = text;
@@ -646,7 +681,7 @@ class Missile extends Projectile {
         }
         super.update(dt);
         if (Math.random() > 0.25) {
-            GAME.entities.particles.push(new Particle(
+            GAME.entities.particles.push(Particle.acquire(
                 this.x - Math.cos(this.angle) * 8,
                 this.y - Math.sin(this.angle) * 8,
                 '#ffb347',
@@ -972,7 +1007,7 @@ class Player {
             this.x += dx * speed * dt;
             this.y += dy * speed * dt;
             if (Math.random() > (dashing ? 0.12 : 0.4)) {
-                GAME.entities.particles.push(new Particle(
+                GAME.entities.particles.push(Particle.acquire(
                     this.x - Math.cos(this.angle) * 16,
                     this.y - Math.sin(this.angle) * 16,
                     dashing ? '#ffffff' : CONFIG.COLORS.PLAYER_BLUE
@@ -1017,7 +1052,7 @@ class Player {
                 const spread = Math.ceil(i / 2) * 0.16 * side;
                 spawn(angle + spread, this.damage * 0.8);
             }
-            GAME.entities.particles.push(new Particle(rx, ry, CONFIG.COLORS.PLAYER_BLUE, 'glow'));
+            GAME.entities.particles.push(Particle.acquire(rx, ry, CONFIG.COLORS.PLAYER_BLUE, 'glow'));
         };
         fire(this.angle, 20, 0);
         if (this.wingCannons) {
@@ -1270,7 +1305,10 @@ const EntityManager = {
         for (const e of enemies) e.update(player, dt);
         for (let i = particles.length - 1; i >= 0; i--) {
             particles[i].update(dt);
-            if (particles[i].life <= 0) particles.splice(i, 1);
+            if (particles[i].life <= 0) {
+                Particle.release(particles[i]);
+                particles.splice(i, 1);
+            }
         }
         for (let i = blackHoles.length - 1; i >= 0; i--) {
             blackHoles[i].update(dt);
@@ -1290,7 +1328,10 @@ const EntityManager = {
         }
         for (let i = floaters.length - 1; i >= 0; i--) {
             floaters[i].update(dt);
-            if (floaters[i].life <= 0) floaters.splice(i, 1);
+            if (floaters[i].life <= 0) {
+                Floater.release(floaters[i]);
+                floaters.splice(i, 1);
+            }
         }
         this.checkCollisions();
     },
@@ -1364,8 +1405,8 @@ const EntityManager = {
 };
 
 function showWaveBanner(title, sub) {
-    document.getElementById('wave-banner-title').textContent = title;
-    document.getElementById('wave-banner-sub').textContent = sub;
+    waveBannerTitle.textContent = title;
+    waveBannerSub.textContent = sub;
     waveBanner.classList.remove('hidden');
     waveBanner.style.animation = 'none';
     void waveBanner.offsetWidth;
@@ -1397,7 +1438,7 @@ const UIManager = {
         xpFill.style.width = `${clamp((GAME.xp / GAME.xpToNextLevel) * 100, 0, 100)}%`;
         healthFill.style.width = `${clamp((player.hp / player.maxHp) * 100, 0, 100)}%`;
         dashFill.style.width = `${clamp((1 - player.dashCooldown / player.dashCooldownMax) * 100, 0, 100)}%`;
-        document.getElementById('health-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+        healthText.textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
         healthBar.classList.toggle('overdrive', player.overdrivePassive && player.hp < player.maxHp * 0.3);
         if (GAME.combo >= 1.5 && GAME.comboTimer > 0) {
             comboText.classList.remove('hidden');
@@ -1405,7 +1446,7 @@ const UIManager = {
         } else {
             comboText.classList.add('hidden');
         }
-        document.getElementById('menu-hiscore').textContent = `BEST SCORE ${GAME.highScore.toLocaleString()}`;
+        menuHiscore.textContent = `BEST SCORE ${GAME.highScore.toLocaleString()}`;
     },
     showUpgradeMenu() {
         if (GAME.mode !== 'playing' && GAME.mode !== 'upgrade') return;
@@ -1467,10 +1508,12 @@ function clearEntities() {
     GAME.entities.enemies.length = 0;
     GAME.entities.projectiles.length = 0;
     GAME.entities.enemyShots.length = 0;
+    GAME.entities.particles.forEach(Particle.release);
     GAME.entities.particles.length = 0;
     GAME.entities.xpOrbs.length = 0;
     GAME.entities.blackHoles.length = 0;
     GAME.entities.powerups.length = 0;
+    GAME.entities.floaters.forEach(Floater.release);
     GAME.entities.floaters.length = 0;
 }
 
@@ -1478,7 +1521,7 @@ function resetRun() {
     GAME.score = 0;
     GAME.level = 1;
     GAME.xp = 0;
-    GAME.xpToNextLevel = 72;
+    GAME.xpToNextLevel = CONFIG.XP_TO_FIRST_LEVEL;
     GAME.kills = 0;
     GAME.wave = 1;
     GAME.elapsed = 0;
